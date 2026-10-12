@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${GRPC_PORT:-50051}:50051"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-xm}:${POSTGRES_PASSWORD:-xm}@db:5432/${POSTGRES_DB:-xm}?sslmode=disable
+      GRPC_PORT: "50051"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-xm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-xm}
+      POSTGRES_DB: ${POSTGRES_DB:-xm}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-xm} -d ${POSTGRES_DB:-xm}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:

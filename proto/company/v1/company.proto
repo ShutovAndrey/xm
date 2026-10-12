@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package company.v1;
+
+option go_package = "gitlab.com/shutovAndrey/xm/gen/company/v1;companyv1";
+
+enum CompanyType {
+  COMPANY_TYPE_UNSPECIFIED = 0;
+  COMPANY_TYPE_CORPORATIONS = 1;
+  COMPANY_TYPE_NON_PROFIT = 2;
+  COMPANY_TYPE_COOPERATIVE = 3;
+  COMPANY_TYPE_SOLE_PROPRIETORSHIP = 4;
+}
+
+message Company {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  int32 employees_count = 4;
+  bool is_registered = 5;
+  CompanyType type = 6;
+}
+
+message CreateCompanyRequest {
+  string name = 1;
+  optional string description = 2;
+  int32 employees_count = 3;
+  bool is_registered = 4;
+  CompanyType type = 5;
+}
+
+message CreateCompanyResponse {
+  Company company = 1;
+}
+
+message GetCompanyRequest {
+  string id = 1;
+}
+
+message GetCompanyResponse {
+  Company company = 1;
+}
+
+message UpdateCompanyRequest {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  int32 employees_delta = 4;
+  bool is_registered = 5;
+  CompanyType type = 6;
+}
+
+message UpdateCompanyResponse {
+  Company company = 1;
+}
+
+message DeleteCompanyRequest {
+  string id = 1;
+}
+
+message DeleteCompanyResponse {}
+
+service CompanyService {
+  rpc CreateCompany(CreateCompanyRequest) returns (CreateCompanyResponse);
+  rpc GetCompany(GetCompanyRequest) returns (GetCompanyResponse);
+  rpc UpdateCompany(UpdateCompanyRequest) returns (UpdateCompanyResponse);
+  rpc DeleteCompany(DeleteCompanyRequest) returns (DeleteCompanyResponse);
+}
