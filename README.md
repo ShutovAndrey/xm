@@ -32,7 +32,9 @@ Without `.env` the defaults from `docker-compose.yml` are used (`xm`/`xm`, port 
 | `JWT_TTL`           | `1h`    | app, token lifetime |
 | `BROKER_PORT`       | `9090`  | host port of broker |
 | `BROKER_TOPIC`      | `companies` | app, topic for company events |
+| `BROKER_TIMEOUT`    | `5s`    | app, timeout per publish call |
 | `OUTBOX_POLL_INTERVAL` | `1s` | app, how often the relay publishes a batch |
+| `OUTBOX_BATCH_SIZE` | `100`   | app, max events per relay tick |
 | `DATABASE_URL`      | —       | app, local run only |
 
 ## Test users

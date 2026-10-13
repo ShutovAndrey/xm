@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net"
 	"os"
@@ -19,15 +18,11 @@ import (
 	"gitlab.com/shutovAndrey/xm/internal/auth"
 	"gitlab.com/shutovAndrey/xm/internal/broker"
 	"gitlab.com/shutovAndrey/xm/internal/company"
+	"gitlab.com/shutovAndrey/xm/internal/config"
 	"gitlab.com/shutovAndrey/xm/internal/db"
 	"gitlab.com/shutovAndrey/xm/internal/grpcserver"
 	"gitlab.com/shutovAndrey/xm/internal/outbox"
 	"gitlab.com/shutovAndrey/xm/internal/user"
-)
-
-const (
-	brokerTimeout   = 5 * time.Second
-	outboxBatchSize = 100
 )
 
 func main() {
@@ -44,46 +39,38 @@ func run(logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		return errors.New("DATABASE_URL is not set")
+	cfg, err := config.Load()
+	if err != nil {
+		return err
 	}
 
-	pool, err := db.Connect(ctx, dsn)
+	pool, err := db.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
 	logger.Info("connected to database")
 
-	if err := db.Migrate(dsn); err != nil {
+	if err := db.Migrate(cfg.DatabaseURL); err != nil {
 		return err
 	}
 	logger.Info("migrations applied")
 
-	jwtTTL, err := time.ParseDuration(envOr("JWT_TTL", "1h"))
-	if err != nil {
-		return err
-	}
-	jwt, err := auth.NewJWT(os.Getenv("JWT_SECRET"), jwtTTL)
+	jwt, err := auth.NewJWT(cfg.JWT.Secret, cfg.JWT.TTL)
 	if err != nil {
 		return err
 	}
 
-	pollInterval, err := time.ParseDuration(envOr("OUTBOX_POLL_INTERVAL", "1s"))
-	if err != nil {
-		return err
-	}
-	producer := broker.NewProducer(envOr("BROKER_HOST", "localhost"), envOr("BROKER_PORT", "9090"), envOr("BROKER_TOPIC", "companies"), brokerTimeout)
+	producer := broker.NewProducer(cfg.Broker.Host, cfg.Broker.Port, cfg.Broker.Topic, cfg.Broker.Timeout)
 	defer producer.Close()
 
-	relay := outbox.NewRelay(pool, producer, pollInterval, outboxBatchSize, logger)
+	relay := outbox.NewRelay(pool, producer, cfg.Outbox.PollInterval, cfg.Outbox.BatchSize, logger)
 	relayDone := make(chan struct{})
 	go func() {
 		defer close(relayDone)
 		relay.Run(ctx)
 	}()
-	logger.Info("outbox relay started", "interval", pollInterval.String())
+	logger.Info("outbox relay started", "interval", cfg.Outbox.PollInterval.String())
 
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(auth.UnaryInterceptor(jwt,
@@ -99,7 +86,7 @@ func run(logger *slog.Logger) error {
 	health.RegisterHealthServer(grpcServer, healthServer)
 	healthServer.SetServingStatus("", health.HealthCheckResponse_SERVING)
 
-	addr := ":" + envOr("GRPC_PORT", "50051")
+	addr := ":" + cfg.GRPCPort
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
@@ -133,11 +120,4 @@ func run(logger *slog.Logger) error {
 		<-relayDone
 		return err
 	}
-}
-
-func envOr(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
-	}
-	return def
 }
