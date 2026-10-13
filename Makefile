@@ -6,6 +6,7 @@ generate:
 lint:
 	buf lint
 	go vet ./...
+	golangci-lint run -v --fix
 
 build:
 	go build -o bin/app ./cmd/app

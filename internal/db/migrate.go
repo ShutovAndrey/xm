@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres" // registers the postgres driver for migrate
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 
 	"gitlab.com/shutovAndrey/xm/migrations"
