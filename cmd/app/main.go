@@ -15,6 +15,7 @@ import (
 	health "google.golang.org/grpc/health/grpc_health_v1"
 
 	companyv1 "gitlab.com/shutovAndrey/xm/gen/company/v1"
+	"gitlab.com/shutovAndrey/xm/internal/company"
 	"gitlab.com/shutovAndrey/xm/internal/db"
 	"gitlab.com/shutovAndrey/xm/internal/grpcserver"
 )
@@ -51,7 +52,8 @@ func run(logger *slog.Logger) error {
 	logger.Info("migrations applied")
 
 	grpcServer := grpc.NewServer()
-	companyv1.RegisterCompanyServiceServer(grpcServer, &grpcserver.CompanyServiceServer{})
+	companyRepo := company.NewRepository(pool)
+	companyv1.RegisterCompanyServiceServer(grpcServer, grpcserver.NewCompanyServiceServer(companyRepo))
 
 	healthServer := health_server.NewServer()
 	health.RegisterHealthServer(grpcServer, healthServer)

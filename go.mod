@@ -4,6 +4,7 @@ go 1.27
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.20.1
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/jackc/pgx/v5 v5.11.0
 	google.golang.org/grpc v1.82.0
 	google.golang.org/protobuf v1.36.11

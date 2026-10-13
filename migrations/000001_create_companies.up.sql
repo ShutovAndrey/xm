@@ -11,5 +11,6 @@ CREATE TABLE companies (
     description     TEXT,
     employees_count INTEGER      NOT NULL,
     is_registered   BOOLEAN      NOT NULL,
-    type            company_type NOT NULL
+    type            company_type NOT NULL,
+    created_at      TIMESTAMPTZ  NOT NULL DEFAULT now()
 );

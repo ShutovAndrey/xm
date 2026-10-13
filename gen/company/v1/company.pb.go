@@ -9,6 +9,7 @@ package companyv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -238,7 +239,8 @@ func (x *CreateCompanyRequest) GetType() CompanyType {
 
 type CreateCompanyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Company       *Company               `protobuf:"bytes,1,opt,name=company,proto3" json:"company,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -273,9 +275,16 @@ func (*CreateCompanyResponse) Descriptor() ([]byte, []int) {
 	return file_company_v1_company_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *CreateCompanyResponse) GetCompany() *Company {
+func (x *CreateCompanyResponse) GetId() string {
 	if x != nil {
-		return x.Company
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CreateCompanyResponse) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
 	}
 	return nil
 }
@@ -369,14 +378,13 @@ func (x *GetCompanyResponse) GetCompany() *Company {
 }
 
 type UpdateCompanyRequest struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Id          string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description *string                `protobuf:"bytes,3,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	// Delta to add to the current employees_count, not the new absolute value.
-	EmployeesDelta int32       `protobuf:"varint,4,opt,name=employees_delta,json=employeesDelta,proto3" json:"employees_delta,omitempty"`
-	IsRegistered   bool        `protobuf:"varint,5,opt,name=is_registered,json=isRegistered,proto3" json:"is_registered,omitempty"`
-	Type           CompanyType `protobuf:"varint,6,opt,name=type,proto3,enum=company.v1.CompanyType" json:"type,omitempty"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Description    *string                `protobuf:"bytes,3,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	EmployeesDelta int32                  `protobuf:"varint,4,opt,name=employees_delta,json=employeesDelta,proto3" json:"employees_delta,omitempty"`
+	IsRegistered   bool                   `protobuf:"varint,5,opt,name=is_registered,json=isRegistered,proto3" json:"is_registered,omitempty"`
+	Type           CompanyType            `protobuf:"varint,6,opt,name=type,proto3,enum=company.v1.CompanyType" json:"type,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -455,7 +463,7 @@ func (x *UpdateCompanyRequest) GetType() CompanyType {
 
 type UpdateCompanyResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Company       *Company               `protobuf:"bytes,1,opt,name=company,proto3" json:"company,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -490,11 +498,11 @@ func (*UpdateCompanyResponse) Descriptor() ([]byte, []int) {
 	return file_company_v1_company_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *UpdateCompanyResponse) GetCompany() *Company {
+func (x *UpdateCompanyResponse) GetId() string {
 	if x != nil {
-		return x.Company
+		return x.Id
 	}
-	return nil
+	return ""
 }
 
 type DeleteCompanyRequest struct {
@@ -582,7 +590,7 @@ var File_company_v1_company_proto protoreflect.FileDescriptor
 const file_company_v1_company_proto_rawDesc = "" +
 	"\n" +
 	"\x18company/v1/company.proto\x12\n" +
-	"company.v1\"\xdf\x01\n" +
+	"company.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xdf\x01\n" +
 	"\aCompany\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12%\n" +
@@ -597,9 +605,11 @@ const file_company_v1_company_proto_rawDesc = "" +
 	"\x0femployees_count\x18\x03 \x01(\x05R\x0eemployeesCount\x12#\n" +
 	"\ris_registered\x18\x04 \x01(\bR\fisRegistered\x12+\n" +
 	"\x04type\x18\x05 \x01(\x0e2\x17.company.v1.CompanyTypeR\x04typeB\x0e\n" +
-	"\f_description\"F\n" +
-	"\x15CreateCompanyResponse\x12-\n" +
-	"\acompany\x18\x01 \x01(\v2\x13.company.v1.CompanyR\acompany\"#\n" +
+	"\f_description\"b\n" +
+	"\x15CreateCompanyResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x129\n" +
+	"\n" +
+	"created_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"#\n" +
 	"\x11GetCompanyRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
 	"\x12GetCompanyResponse\x12-\n" +
@@ -611,9 +621,9 @@ const file_company_v1_company_proto_rawDesc = "" +
 	"\x0femployees_delta\x18\x04 \x01(\x05R\x0eemployeesDelta\x12#\n" +
 	"\ris_registered\x18\x05 \x01(\bR\fisRegistered\x12+\n" +
 	"\x04type\x18\x06 \x01(\x0e2\x17.company.v1.CompanyTypeR\x04typeB\x0e\n" +
-	"\f_description\"F\n" +
-	"\x15UpdateCompanyResponse\x12-\n" +
-	"\acompany\x18\x01 \x01(\v2\x13.company.v1.CompanyR\acompany\"&\n" +
+	"\f_description\"'\n" +
+	"\x15UpdateCompanyResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"&\n" +
 	"\x14DeleteCompanyRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\x17\n" +
 	"\x15DeleteCompanyResponse*\xab\x01\n" +
@@ -655,27 +665,27 @@ var file_company_v1_company_proto_goTypes = []any{
 	(*UpdateCompanyResponse)(nil), // 7: company.v1.UpdateCompanyResponse
 	(*DeleteCompanyRequest)(nil),  // 8: company.v1.DeleteCompanyRequest
 	(*DeleteCompanyResponse)(nil), // 9: company.v1.DeleteCompanyResponse
+	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
 }
 var file_company_v1_company_proto_depIdxs = []int32{
 	0,  // 0: company.v1.Company.type:type_name -> company.v1.CompanyType
 	0,  // 1: company.v1.CreateCompanyRequest.type:type_name -> company.v1.CompanyType
-	1,  // 2: company.v1.CreateCompanyResponse.company:type_name -> company.v1.Company
+	10, // 2: company.v1.CreateCompanyResponse.created_at:type_name -> google.protobuf.Timestamp
 	1,  // 3: company.v1.GetCompanyResponse.company:type_name -> company.v1.Company
 	0,  // 4: company.v1.UpdateCompanyRequest.type:type_name -> company.v1.CompanyType
-	1,  // 5: company.v1.UpdateCompanyResponse.company:type_name -> company.v1.Company
-	2,  // 6: company.v1.CompanyService.CreateCompany:input_type -> company.v1.CreateCompanyRequest
-	4,  // 7: company.v1.CompanyService.GetCompany:input_type -> company.v1.GetCompanyRequest
-	6,  // 8: company.v1.CompanyService.UpdateCompany:input_type -> company.v1.UpdateCompanyRequest
-	8,  // 9: company.v1.CompanyService.DeleteCompany:input_type -> company.v1.DeleteCompanyRequest
-	3,  // 10: company.v1.CompanyService.CreateCompany:output_type -> company.v1.CreateCompanyResponse
-	5,  // 11: company.v1.CompanyService.GetCompany:output_type -> company.v1.GetCompanyResponse
-	7,  // 12: company.v1.CompanyService.UpdateCompany:output_type -> company.v1.UpdateCompanyResponse
-	9,  // 13: company.v1.CompanyService.DeleteCompany:output_type -> company.v1.DeleteCompanyResponse
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	2,  // 5: company.v1.CompanyService.CreateCompany:input_type -> company.v1.CreateCompanyRequest
+	4,  // 6: company.v1.CompanyService.GetCompany:input_type -> company.v1.GetCompanyRequest
+	6,  // 7: company.v1.CompanyService.UpdateCompany:input_type -> company.v1.UpdateCompanyRequest
+	8,  // 8: company.v1.CompanyService.DeleteCompany:input_type -> company.v1.DeleteCompanyRequest
+	3,  // 9: company.v1.CompanyService.CreateCompany:output_type -> company.v1.CreateCompanyResponse
+	5,  // 10: company.v1.CompanyService.GetCompany:output_type -> company.v1.GetCompanyResponse
+	7,  // 11: company.v1.CompanyService.UpdateCompany:output_type -> company.v1.UpdateCompanyResponse
+	9,  // 12: company.v1.CompanyService.DeleteCompany:output_type -> company.v1.DeleteCompanyResponse
+	9,  // [9:13] is the sub-list for method output_type
+	5,  // [5:9] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_company_v1_company_proto_init() }
