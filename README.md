@@ -80,8 +80,17 @@ make run   # BROKER_HOST defaults to localhost, BROKER_PORT comes from .env
 ```sh
 make generate   # buf generate -> gen/
 make lint       # buf lint, go vet, golangci-lint
+make test       # go test -race ./...
 make build      # bin/app
 ```
+
+Repository and relay tests run against a real Postgres and are skipped unless `TEST_DATABASE_URL` is set. Each test gets its own schema with all migrations applied, so the compose database can be used as is:
+
+```sh
+TEST_DATABASE_URL=postgres://xm:xm@localhost:${POSTGRES_PORT}/xm?sslmode=disable make test
+```
+
+CI runs them against a `postgres` service.
 
 ## Call
 
