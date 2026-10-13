@@ -377,6 +377,8 @@ func (x *GetCompanyResponse) GetCompany() *Company {
 	return nil
 }
 
+// Full replacement (PUT semantics): every field is written as sent.
+// Omitting description clears it.
 type UpdateCompanyRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

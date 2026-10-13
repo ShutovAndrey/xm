@@ -16,4 +16,5 @@ type Company struct {
 var (
 	ErrNotFound  = errors.New("company not found")
 	ErrNameTaken = errors.New("company name already taken")
+	ErrInvalidID = errors.New("invalid company id")
 )

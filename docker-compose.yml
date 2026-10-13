@@ -6,6 +6,8 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-xm}:${POSTGRES_PASSWORD:-xm}@db:5432/${POSTGRES_DB:-xm}?sslmode=disable
       GRPC_PORT: "50051"
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_TTL: ${JWT_TTL:-1h}
     depends_on:
       db:
         condition: service_healthy
@@ -26,6 +28,26 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # Inserts test users (see seeds/users.sql) once the app has applied migrations.
+  seed:
+    image: postgres:17-alpine
+    depends_on:
+      app:
+        condition: service_started
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:-xm}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-xm}
+      PGDATABASE: ${POSTGRES_DB:-xm}
+    volumes:
+      - ./seeds:/seeds:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until psql -tAc "SELECT 1 FROM users LIMIT 1" >/dev/null 2>&1; do sleep 1; done
+        psql -v ON_ERROR_STOP=1 -f /seeds/users.sql
+    restart: "no"
 
 volumes:
   pgdata:

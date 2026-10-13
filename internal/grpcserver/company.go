@@ -96,6 +96,8 @@ func toStatus(err error) error {
 		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, company.ErrNameTaken):
 		return status.Error(codes.AlreadyExists, err.Error())
+	case errors.Is(err, company.ErrInvalidID):
+		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return status.Error(codes.Internal, "internal error")
 	}

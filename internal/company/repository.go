@@ -65,7 +65,7 @@ func (r *Repository) Update(ctx context.Context, id string, upd Company, employe
 func (r *Repository) Delete(ctx context.Context, id string) error {
 	tag, err := r.pool.Exec(ctx, `DELETE FROM companies WHERE id = $1`, id)
 	if err != nil {
-		return err
+		return mapErr(err)
 	}
 	if tag.RowsAffected() == 0 {
 		return ErrNotFound
@@ -77,13 +77,15 @@ func mapErr(err error) error {
 	switch {
 	case errors.Is(err, pgx.ErrNoRows):
 		return ErrNotFound
-	case isUniqueViolation(err):
+	case isPgCode(err, pgerrcode.UniqueViolation):
 		return ErrNameTaken
+	case isPgCode(err, pgerrcode.InvalidTextRepresentation):
+		return ErrInvalidID
 	}
 	return err
 }
 
-func isUniqueViolation(err error) bool {
+func isPgCode(err error, code string) bool {
 	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation
+	return errors.As(err, &pgErr) && pgErr.Code == code
 }
