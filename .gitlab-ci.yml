@@ -1,0 +1,62 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+stages:
+  - lint
+  - test
+  - build
+
+variables:
+  GOPATH: $CI_PROJECT_DIR/.go
+  GOCACHE: $CI_PROJECT_DIR/.go/cache
+  GOLANGCI_LINT_VERSION: v2.14.0 # must support the Go version in go.mod
+
+cache:
+  key: go-$CI_COMMIT_REF_SLUG
+  paths:
+    - .go/pkg/mod/
+    - .go/bin/
+    - .go/cache/
+
+lint:
+  stage: lint
+  image: golang:1.27-alpine
+  before_script:
+    - export PATH=$CI_PROJECT_DIR/.go/bin:$PATH
+    - |
+      # Reinstall when the cached binary is missing or its version does not
+      # match GOLANGCI_LINT_VERSION (the cache survives version bumps).
+      if ! $CI_PROJECT_DIR/.go/bin/golangci-lint version 2>/dev/null | grep -qF "${GOLANGCI_LINT_VERSION#v}"; then
+        go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$GOLANGCI_LINT_VERSION
+      fi
+  script:
+    - golangci-lint run -v
+
+test:
+  stage: test
+  image: golang:1.27-alpine
+  script:
+    - go test ./...
+
+build:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script:
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+      fi
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA .
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+        docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA $CI_REGISTRY_IMAGE:latest
+        docker push $CI_REGISTRY_IMAGE:latest
+      fi
