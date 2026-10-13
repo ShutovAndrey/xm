@@ -1,6 +1,6 @@
 # xm
 
-gRPC service on Go + PostgreSQL. Migrations are embedded and applied on startup.
+gRPC service on Go + PostgreSQL that publishes company events to a [go-kafka](https://gitlab.com/shutovAndrey/go-kafka) broker via a transactional outbox. Migrations are embedded and applied on startup.
 
 ## Run
 
@@ -9,7 +9,7 @@ cp .env.example .env   # adjust if needed
 docker compose up --build
 ```
 
-gRPC listens on `localhost:50051`, PostgreSQL on `localhost:${POSTGRES_PORT}`.
+gRPC listens on `localhost:50051`, PostgreSQL on `localhost:${POSTGRES_PORT}`, the broker on `localhost:${BROKER_PORT}`. The `broker` image is built from the go-kafka git repository on first `up`.
 
 ## Environment
 
@@ -30,6 +30,9 @@ Without `.env` the defaults from `docker-compose.yml` are used (`xm`/`xm`, port 
 | `GRPC_PORT`         | `50051` | host port of app |
 | `JWT_SECRET`        | `dev-secret-change-me` | app, HS256 signing key |
 | `JWT_TTL`           | `1h`    | app, token lifetime |
+| `BROKER_PORT`       | `9090`  | host port of broker |
+| `BROKER_TOPIC`      | `companies` | app, topic for company events |
+| `OUTBOX_POLL_INTERVAL` | `1s` | app, how often the relay publishes a batch |
 | `DATABASE_URL`      | —       | app, local run only |
 
 ## Test users
@@ -44,12 +47,30 @@ The `seed` service inserts them on `docker compose up` (idempotent, see `seeds/u
 
 Passwords are stored as bcrypt via pgcrypto (`crypt(password, salt)`).
 
+## Events
+
+Every `CreateCompany`, `UpdateCompany`, `DeleteCompany` publishes an event to the `go-kafka` broker (service `broker`, built from [go-kafka](https://gitlab.com/shutovAndrey/go-kafka)) through a transactional outbox:
+
+1. The change and the event row are written to Postgres in one transaction (`outbox` table).
+2. The relay goroutine in `app` polls `outbox` every `OUTBOX_POLL_INTERVAL`, publishes up to 100 rows in `id` order and deletes the published ones. On a failure it records `attempts` / `last_error` on the row and retries next tick; a broker outage only grows the backlog.
+
+Delivery is at-least-once, consumers dedup by the `event-id` header. Message key is the company id, so events of one company stay ordered on one partition.
+
+| Header       | Value |
+|--------------|-------|
+| `event-type` | `company.created`, `company.updated`, `company.deleted` |
+| `event-id`   | UUID, unique per event |
+
+Payload (JSON): full company state for `created` / `updated` (`employees_count` is the value after applying the delta), `{"id": "<uuid>"}` for `deleted`.
+
+Consume with the [go-kafka-client](https://gitlab.com/shutovAndrey/go-kafka-client) `Reader` on `localhost:${BROKER_PORT}`, topic `companies`.
+
 ## Local run (without Docker for the app)
 
 ```sh
-docker compose up -d db
+docker compose up -d db broker
 export $(grep -v '^#' .env | xargs)
-make run
+make run   # BROKER_HOST defaults to localhost, BROKER_PORT comes from .env
 ```
 
 ## Development

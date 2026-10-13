@@ -17,10 +17,17 @@ import (
 	authv1 "gitlab.com/shutovAndrey/xm/gen/auth/v1"
 	companyv1 "gitlab.com/shutovAndrey/xm/gen/company/v1"
 	"gitlab.com/shutovAndrey/xm/internal/auth"
+	"gitlab.com/shutovAndrey/xm/internal/broker"
 	"gitlab.com/shutovAndrey/xm/internal/company"
 	"gitlab.com/shutovAndrey/xm/internal/db"
 	"gitlab.com/shutovAndrey/xm/internal/grpcserver"
+	"gitlab.com/shutovAndrey/xm/internal/outbox"
 	"gitlab.com/shutovAndrey/xm/internal/user"
+)
+
+const (
+	brokerTimeout   = 5 * time.Second
+	outboxBatchSize = 100
 )
 
 func main() {
@@ -63,6 +70,21 @@ func run(logger *slog.Logger) error {
 		return err
 	}
 
+	pollInterval, err := time.ParseDuration(envOr("OUTBOX_POLL_INTERVAL", "1s"))
+	if err != nil {
+		return err
+	}
+	producer := broker.NewProducer(envOr("BROKER_HOST", "localhost"), envOr("BROKER_PORT", "9090"), envOr("BROKER_TOPIC", "companies"), brokerTimeout)
+	defer producer.Close()
+
+	relay := outbox.NewRelay(pool, producer, pollInterval, outboxBatchSize, logger)
+	relayDone := make(chan struct{})
+	go func() {
+		defer close(relayDone)
+		relay.Run(ctx)
+	}()
+	logger.Info("outbox relay started", "interval", pollInterval.String())
+
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(auth.UnaryInterceptor(jwt,
 			companyv1.CompanyService_CreateCompany_FullMethodName,
@@ -104,8 +126,11 @@ func run(logger *slog.Logger) error {
 		case <-time.After(10 * time.Second):
 			grpcServer.Stop()
 		}
+		<-relayDone
 		return nil
 	case err := <-errCh:
+		stop()
+		<-relayDone
 		return err
 	}
 }
