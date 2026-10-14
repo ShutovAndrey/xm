@@ -1,7 +1,8 @@
 # xm
 
-gRPC service on Go + PostgreSQL that publishes company events to a [go-kafka](https://gitlab.com/shutovAndrey/go-kafka) broker via a transactional outbox. Migrations are embedded and applied on startup.
+gRPC service on Go + PostgreSQL that publishes company events to a [go-kafka](https://gitlab.com/shutovAndrey/go-kafka) broker (my own demo implementation of kafka ) via a transactional outbox. Migrations are embedded and applied on startup.
 
+originally project was placed at gitlab: https://gitlab.com/shutovAndrey/xm
 ## Run
 
 ```sh
